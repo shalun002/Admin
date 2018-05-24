@@ -1,6 +1,7 @@
 ﻿using Admin.Lib.Module;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -11,8 +12,20 @@ namespace Admin.Lib
 {
     public class ServiceProvider
     {
+        public ServiceProvider() : this("") { }
+
+        public ServiceProvider(string path)
+        {
+            if (string.IsNullOrEmpty(path))
+                this.path = Path.Combine(@"\\dc\Студенты\ПКО\SEB-171.2\C#", "Operators.xml");
+            else
+                this.path = path;
+        }
+
         List<Provider> providers = new List<Provider>();
         List<int> providersPrefixs = new List<int>();
+
+        private string path { get; set; }
 
         public void AddProvider()
         {
@@ -43,7 +56,46 @@ namespace Admin.Lib
             {
                 providers.Add(provider);
                 providersPrefixs.AddRange(provider.Prefix);
+                addProviderToXml(provider);
             }
+        }
+
+        public void editProvider()
+        {
+            // 1. Search provider
+            Console.WriteLine("Введите название провайдера: ");
+            string s = Console.ReadLine();
+
+            XmlNode xn = SearchProviderByName(s);
+            if (xn != null)
+            {
+                Console.WriteLine(xn.SelectSingleNode("NameCompany").InnerText);
+            }
+            else
+            {
+                Console.WriteLine("Провайдер не найден!");
+            }
+        }
+
+        public void deleteProvider()
+        {
+
+        }
+
+        public XmlNode SearchProviderByName(string name)
+        {
+            XmlDocument xd = getDocument();
+            XmlElement root = xd.DocumentElement;
+
+            foreach (XmlElement item in root)
+            {
+                foreach (XmlNode i in item.ChildNodes)
+                {
+                    if (i.Name == "NameCompany" && i.InnerText == name)
+                        return i;
+                }
+            }
+            return null;
         }
 
         private bool isExistsProvider(Provider pro)
@@ -68,8 +120,8 @@ namespace Admin.Lib
 
         private void addProviderToXml(Provider pro)
         {
-            XmlDocument doc = new XmlDocument();
-            XmlElement elem = doc.CreateElement("Провайдер");
+            XmlDocument doc = getDocument();
+            XmlElement elem = doc.CreateElement("Provider");
 
             XmlElement LogoUrl = doc.CreateElement("LogoUrl");
             LogoUrl.InnerText = pro.LogoUrl;
@@ -91,8 +143,34 @@ namespace Admin.Lib
             elem.AppendChild(NameCompany);
             elem.AppendChild(Percent);
             elem.AppendChild(Prefixs);
-            doc.AppendChild(elem);
-            doc.Save("Providers.xml");
+
+            XmlElement root = doc.DocumentElement;
+            root.AppendChild(elem);
+            doc.Save(path);
+        }
+
+        private XmlDocument getDocument()
+        {
+            XmlDocument xd = new XmlDocument();
+            //\\dc\Студенты\ПКО\SEB-171.2\C#
+
+            FileInfo fi = new FileInfo(path);
+            if (fi.Exists)
+            {
+                xd.Load(path);
+            }
+            else
+            {
+                //1
+                //FileStream fs = fi.Create();
+                //fs.Close();
+
+                //2
+                XmlElement xl = xd.CreateElement("Providers");
+                xd.AppendChild(xl);
+                xd.Save(path);
+            }
+            return xd;
         }
     }
 }
