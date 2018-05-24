@@ -12,7 +12,8 @@ namespace Admin
         static void Main(string[] args)
         {
             ServiceProvider sp = new ServiceProvider();
-            sp.AddProvider();
+            // sp.AddProvider();
+            sp.editProvider();
         }
     }
 }

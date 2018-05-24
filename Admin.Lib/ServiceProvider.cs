@@ -12,6 +12,11 @@ namespace Admin.Lib
 {
     public class ServiceProvider
     {
+        List<Provider> providers = new List<Provider>();
+        List<int> providersPrefixs = new List<int>();
+
+        private string path { get; set; }
+
         public ServiceProvider() : this("") { }
 
         public ServiceProvider(string path)
@@ -21,11 +26,6 @@ namespace Admin.Lib
             else
                 this.path = path;
         }
-
-        List<Provider> providers = new List<Provider>();
-        List<int> providersPrefixs = new List<int>();
-
-        private string path { get; set; }
 
         public void AddProvider()
         {
@@ -64,17 +64,7 @@ namespace Admin.Lib
         {
             // 1. Search provider
             Console.WriteLine("Введите название провайдера: ");
-            string s = Console.ReadLine();
-
-            XmlNode xn = SearchProviderByName(s);
-            if (xn != null)
-            {
-                Console.WriteLine(xn.SelectSingleNode("NameCompany").InnerText);
-            }
-            else
-            {
-                Console.WriteLine("Провайдер не найден!");
-            }
+            SearchProviderByNameForEdit(Console.ReadLine());
         }
 
         public void deleteProvider()
@@ -82,20 +72,43 @@ namespace Admin.Lib
 
         }
 
-        public XmlNode SearchProviderByName(string name)
+        public void SearchProviderByNameForEdit(string name)
         {
             XmlDocument xd = getDocument();
             XmlElement root = xd.DocumentElement;
 
+            bool find = false;
+
             foreach (XmlElement item in root)
             {
+                find = false;
+
                 foreach (XmlNode i in item.ChildNodes)
                 {
                     if (i.Name == "NameCompany" && i.InnerText == name)
-                        return i;
+                        find = true;
+                }
+                if (find)
+                {
+                    XmlElement el = Edit(item);
+                    break;
                 }
             }
-            return null;
+            if (find)
+                xd.Save(path);
+        }
+
+        private XmlElement Edit (XmlElement prov)
+        {
+            foreach (XmlElement item in prov.ChildNodes)
+            {
+                Console.WriteLine(item.Name + " :(" + item.InnerText + ") -");
+                string cn = Console.ReadLine();
+
+                if (!string.IsNullOrEmpty(cn))
+                    item.InnerText = cn;
+            }
+            return prov;
         }
 
         private bool isExistsProvider(Provider pro)
@@ -143,9 +156,7 @@ namespace Admin.Lib
             elem.AppendChild(NameCompany);
             elem.AppendChild(Percent);
             elem.AppendChild(Prefixs);
-
-            XmlElement root = doc.DocumentElement;
-            root.AppendChild(elem);
+            doc.DocumentElement.AppendChild(elem);
             doc.Save(path);
         }
 
